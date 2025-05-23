@@ -3,24 +3,20 @@ import random
 import time
 import re
 import asyncio
-import os # NEW: Import os for path manipulation
+import os # Keep os import, it's generally useful, but not for NLTK data path here
 
 # NLTK Imports for NLP processing
 import nltk
 from nltk.stem import WordNetLemmatizer, PorterStemmer
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
-# Removed: from nltk.downloader import DownloadError # No longer needed
 
-# --- NLTK Data Path Configuration (Crucial for Deployment) ---
-# This tells NLTK where to look for data files.
-# It assumes you've created an 'nltk_data' folder in your project's root directory
-# and copied the necessary corpora into it.
-nltk_data_path = os.path.join(os.getcwd(), "nltk_data")
-if nltk_data_path not in nltk.data.path:
-    nltk.data.path.append(nltk_data_path)
-    
+# --- Import the Knowledge Base from a separate file ---
+# Assuming knowledge_base.py is in the same directory
+from knowledge_base import RAW_KNOWLEDGE_BASE
+
 # --- Initialize NLTK tools ---
+# These lines will now implicitly find the NLTK data because NLTK_DATA env var is set by .devcontainer
 lemmatizer = WordNetLemmatizer()
 stemmer = PorterStemmer()
 STOPWORDS = set(stopwords.words('english'))
@@ -59,20 +55,6 @@ ASSISTANT_GREETING_RESPONSES = [
     "Hey! Ask away about the Nigerian government.",
     "Greetings! What's your question regarding the Nigerian government?"
 ]
-
-# --- 3. Define the Knowledge Base ---
-RAW_KNOWLEDGE_BASE = {
-    "nigerian president": "The current President of Nigeria is Bola Ahmed Tinubu.",
-    "capital of nigeria": "The capital city of Nigeria is Abuja.",
-    "nigerian states": "Nigeria has 36 states and the Federal Capital Territory, Abuja.",
-    "nigerian population": "According to the National Population Commission, Nigeria's population is estimated to be over 200 million people.",
-    "nigerian currency": "The currency of Nigeria is the Naira (NGN).",
-    "functions of government": "The functions of government include maintaining law and order, providing public services, regulating the economy, and defending the nation.",
-    "local government": "Local governments in Nigeria are the third tier of government, responsible for grassroots development and service delivery in specific areas.",
-    "federal government": "The Federal Government of Nigeria is the central governing body, with responsibilities for national defense, foreign policy, monetary policy, and major infrastructure projects.",
-    "state government": "State governments in Nigeria are responsible for governance within their respective states, including education, healthcare, and state-level infrastructure."
-    # Add more Q&A pairs here
-}
 
 # --- Initialize TF-IDF Vectorizer and Process KB ---
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -118,13 +100,13 @@ def get_response_from_kb(query, similarity_threshold=0.3): # Adjust threshold as
 
     user_query_vector = vectorizer.transform([processed_user_query_str])
 
-    similarities = cosine_similarity(user_query_vector, kb_vectors)
+    similari = cosine_similarity(user_query_vector, kb_vectors)
 
-    best_match_index = similarities.argmax()
-    highest_similarity_score = similarities[0, best_match_index]
+    best_match_index = similari.argmax()
+    highest_similarity_score = similari[0, best_match_index]
 
     # Debugging: Show similarity scores (uncomment if needed)
-    # st.sidebar.text(f"All Similarities: {similarities[0]}")
+    # st.sidebar.text(f"All Similarities: {similari[0]}")
     # st.sidebar.text(f"Highest Similarity Score: {highest_similarity_score} at index {best_match_index}")
     # st.sidebar.text(f"Matching KB Original Key: {KB_ENTRIES_FOR_MATCHING[best_match_index][0]}")
 
