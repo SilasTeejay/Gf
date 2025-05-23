@@ -13,11 +13,6 @@ from nltk.corpus import stopwords
 from knowledge_base import RAW_KNOWLEDGE_BASE
 
 
-# --- Initialize NLTK tools ---
-lemmatizer = WordNetLemmatizer()
-stemmer = PorterStemmer() # Ensure this is PorterStemmer(), not PorterNetStemmer()
-STOPWORDS = set(stopwords.words('english'))
-
 
 # --- Helper functions for NLP processing ---
 def preprocess_text_for_matching(text, use_stemming=False):
