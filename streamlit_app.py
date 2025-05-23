@@ -5,6 +5,10 @@ import re
 import asyncio
 import os
 
+
+nltk.download("punkt")
+nltk.download("stopwords")
+
 # NLTK Imports for NLP processing
 import nltk
 from nltk.stem import WordNetLemmatizer, PorterStemmer
