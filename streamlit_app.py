@@ -10,6 +10,7 @@ import nltk
 from nltk.stem import WordNetLemmatizer, PorterStemmer
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
+from knowledge_base import RAW_KNOWLEDGE_BASE
 
 # --- NLTK Data Path Configuration (Crucial for Streamlit Cloud Deployment) ---
 # This tells NLTK where to look for data files within the cloned repository.
@@ -67,13 +68,6 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 vectorizer = TfidfVectorizer(tokenizer=lambda x: x.split(), lowercase=False)
 
-# --- Define the Knowledge Base (Replace with your actual data) ---
-RAW_KNOWLEDGE_BASE = {
-    "What is the capital of Nigeria?": "The capital of Nigeria is Abuja.",
-    "Who is the president of Nigeria?": "As of 2024, the president of Nigeria is Bola Ahmed Tinubu.",
-    "What is the population of Nigeria?": "Nigeria has an estimated population of over 200 million people.",
-    # Add more question-answer pairs as needed
-}
 
 processed_kb_keys_list = [
     preprocess_text_for_matching(key, use_stemming=False)
