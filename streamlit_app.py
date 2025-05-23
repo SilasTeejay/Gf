@@ -76,6 +76,7 @@ processed_kb_keys_list = [
     for key in RAW_KNOWLEDGE_BASE.keys()
 ]
 
+
 kb_vectors = vectorizer.fit_transform(processed_kb_keys_list)
 
 KB_ENTRIES_FOR_MATCHING = list(RAW_KNOWLEDGE_BASE.items())
