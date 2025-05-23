@@ -15,12 +15,7 @@ from knowledge_base import RAW_KNOWLEDGE_BASE
 # --- NLTK Data Path Configuration (Crucial for Streamlit Cloud Deployment) ---
 # This tells NLTK where to look for data files within the cloned repository.
 # Assumes 'nltk_data' folder is in your project's root and is tracked by Git.
-import os
-import nltk
-# ... other NLTK imports ...
-
-# --- NLTK Data Path Configuration ---
-nltk_data_path = os.path.join(os.getcwd(), "nltk_data") # This will point to /mount/src/gf/nltk_data
+nltk_data_path = os.path.join(os.getcwd(), "nltk_data") # This will point to /mount/src/gf/nltk_data on Streamlit Cloud
 if nltk_data_path not in nltk.data.path:
     nltk.data.path.append(nltk_data_path)
 
