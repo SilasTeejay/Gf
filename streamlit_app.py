@@ -3,7 +3,7 @@ import random
 import time
 import re
 import asyncio
-import os # Keep os import, it's generally useful, but not for NLTK data path here
+import os
 
 # NLTK Imports for NLP processing
 import nltk
@@ -11,15 +11,20 @@ from nltk.stem import WordNetLemmatizer, PorterStemmer
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 
-# --- Import the Knowledge Base from a separate file ---
-# Assuming knowledge_base.py is in the same directory
-from knowledge_base import RAW_KNOWLEDGE_BASE
+# --- NLTK Data Path Configuration (Crucial for Streamlit Cloud Deployment) ---
+# This tells NLTK where to look for data files within the cloned repository.
+# Assumes 'nltk_data' folder is in your project's root and is tracked by Git.
+nltk_data_path = os.path.join(os.getcwd(), "nltk_data") # This will point to /mount/src/gf/nltk_data on Streamlit Cloud
+if nltk_data_path not in nltk.data.path:
+    nltk.data.path.append(nltk_data_path)
+
+# ... rest of your imports and code ...
 
 # --- Initialize NLTK tools ---
-# These lines will now implicitly find the NLTK data because NLTK_DATA env var is set by .devcontainer
 lemmatizer = WordNetLemmatizer()
-stemmer = PorterStemmer()
+stemmer = PorterStemmer() # Ensure this is PorterStemmer(), not PorterNetStemmer()
 STOPWORDS = set(stopwords.words('english'))
+
 
 # --- Helper functions for NLP processing ---
 def preprocess_text_for_matching(text, use_stemming=False):
