@@ -16,16 +16,9 @@
             ]
         }
     },
-    // --- START: CRITICAL CHANGES FOR NLTK DATA & DEPENDENCY SETUP ---
-    // This command runs ONCE after the Codespace container is created/rebuilt.
-    // It installs Python requirements and then downloads NLTK data.
-    "postCreateCommand": "pip install --no-cache-dir -r requirements.txt && mkdir -p /usr/local/share/nltk_data && python -c \"import nltk; nltk.data.path.append('/usr/local/share/nltk_data'); nltk.download('punkt', download_dir='/usr/local/share/nltk_data'); nltk.download('wordnet', download_dir='/usr/local/share/nltk_data'); nltk.download('averaged_perceptron_tagger', download_dir='/usr/local/share/nltk_data'); nltk.download('stopwords', download_dir='/usr/local/share/nltk_data');\"",
+    
+"postCreateCommand": "pip install --no-cache-dir -r requirements.txt && python -m spacy download en_core_web_sm",
 
-    // This environment variable tells NLTK where to find its data by default.
-    "containerEnv": {
-        "NLTK_DATA": "/usr/local/share/nltk_data"
-    },
-    // --- END: CRITICAL CHANGES ---
 
     "postAttachCommand": {
         // This command runs every time the Codespace is attached.

@@ -4,50 +4,33 @@ import time
 import re
 import asyncio
 import os
+import spacy
 
-# NLTK Imports for NLP processing
-import nltk
-nltk.download("punkt")
-nltk.download("stopwords")
-from nltk.stem import WordNetLemmatizer, PorterStemmer
-from nltk.tokenize import word_tokenize
-from nltk.corpus import stopwords
-from knowledge_base import RAW_KNOWLEDGE_BASE
-
-# --- NLTK Data Path Configuration (Crucial for Streamlit Cloud Deployment) ---
-# This tells NLTK where to look for data files within the cloned repository.
-# Assumes 'nltk_data' folder is in your project's root and is tracked by Git.
-nltk_data_path = os.path.join(os.getcwd(), "nltk_data") # This will point to /mount/src/gf/nltk_data on Streamlit Cloud
-if nltk_data_path not in nltk.data.path:
-    nltk.data.path.append(nltk_data_path)
-
-# ... rest of your imports and code ...
-
-# --- Initialize NLTK tools ---
-lemmatizer = WordNetLemmatizer()
-stemmer = PorterStemmer() # Ensure this is PorterStemmer(), not PorterNetStemmer()
-STOPWORDS = set(stopwords.words('english'))
+# Load the SpaCy English model
+# This will load the model downloaded in the terminal (en_core_web_sm)
+try:
+    nlp = spacy.load("en_core_web_sm")
+except OSError:
+    st.error("SpaCy model 'en_core_web_sm' not found. Please run 'python -m spacy download en_core_web_sm' in your terminal.")
+    st.stop() # Stop the app if model is not found
 
 
 # --- Helper functions for NLP processing ---
-def preprocess_text_for_matching(text, use_stemming=False):
+def preprocess_text_for_matching(text): # Removed use_stemming parameter
     """
-    Tokenizes, converts to lowercase, removes stopwords, and then either
-    lemmatizes or stems the text. Returns a space-separated string of processed words.
-    This format is required by TfidfVectorizer.
+    Tokenizes, converts to lowercase, removes stopwords, and lemmatizes the text using SpaCy.
+    Returns a space-separated string of processed words.
     """
-    tokens = word_tokenize(text.lower())
+    doc = nlp(text.lower()) # Process text with SpaCy
     processed_tokens = []
-    for token in tokens:
-        if token.isalpha() and token not in STOPWORDS:
-            if use_stemming:
-                processed_tokens.append(stemmer.stem(token))
-            else:
-                processed_tokens.append(lemmatizer.lemmatize(token))
+    for token in doc:
+        # Check if it's an alphabetic token and not a stop word
+        if token.is_alpha and not token.is_stop:
+            # Use token.lemma_ for lemmatization
+            processed_tokens.append(token.lemma_)
     return " ".join(processed_tokens) # Return as a single string for TfidfVectorizer
-
-
-# --- 1. Define Initial Greetings ---
+# --- 
+# 1. Define Initial Greetings ---
 INITIAL_GREETINGS = [
     "Hello there! How can I assist you today regarding the Nigerian Government?",
     "Hi, human! I'm GovFocus AI, ready to help you with information about the Nigerian Government. What's on your mind?",
@@ -67,12 +50,13 @@ ASSISTANT_GREETING_RESPONSES = [
 # --- Initialize TF-IDF Vectorizer and Process KB ---
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+from knowledge_base import RAW_KNOWLEDGE_BASE
 
 vectorizer = TfidfVectorizer(tokenizer=lambda x: x.split(), lowercase=False)
 
 
 processed_kb_keys_list = [
-    preprocess_text_for_matching(key, use_stemming=False)
+    preprocess_text_for_matching(key) # Removed use_stemming=False
     for key in RAW_KNOWLEDGE_BASE.keys()
 ]
 
@@ -98,7 +82,7 @@ def check_for_user_greeting(query):
 
 # --- 5. Function to Search Knowledge Base (using TF-IDF and Cosine Similarity) ---
 def get_response_from_kb(query, similarity_threshold=0.3): # Adjust threshold as needed
-    processed_user_query_str = preprocess_text_for_matching(query, use_stemming=False)
+    processed_user_query_str = preprocess_text_for_matching(query)
 
     # Debugging: Show raw and processed user query (uncomment if needed)
     # st.sidebar.text(f"User Query (Raw): {query}")
@@ -110,16 +94,15 @@ def get_response_from_kb(query, similarity_threshold=0.3): # Adjust threshold as
 
     user_query_vector = vectorizer.transform([processed_user_query_str])
 
-    similari = cosine_similarity(user_query_vector, kb_vectors)
+    similarity = cosine_similarity(user_query_vector, kb_vectors)
 
-    best_match_index = similari.argmax()
-    highest_similarity_score = similari[0, best_match_index]
+    best_match_index = similarity.argmax()
+    highest_similarity_score = similarity[0, best_match_index]
 
     # Debugging: Show similarity scores (uncomment if needed)
-    # st.sidebar.text(f"All Similarities: {similari[0]}")
+    # st.sidebar.text(f"All Similarities: {similarity[0]}")
     # st.sidebar.text(f"Highest Similarity Score: {highest_similarity_score} at index {best_match_index}")
     # st.sidebar.text(f"Matching KB Original Key: {KB_ENTRIES_FOR_MATCHING[best_match_index][0]}")
-
 
     if highest_similarity_score >= similarity_threshold:
         return KB_ENTRIES_FOR_MATCHING[best_match_index][1]
