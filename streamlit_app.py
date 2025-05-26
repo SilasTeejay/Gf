@@ -329,7 +329,7 @@ RAW_KNOWLEDGE_BASE = {
     * **Bridges and Flyovers:** Construction of major bridges and flyovers in urban centers (e.g., Lagos) to ease traffic congestion and improve urban mobility.
     """
     # Add more Q&A pairs here
-    }-
+    }
 
 vectorizer = TfidfVectorizer(tokenizer=lambda x: x.split(), lowercase=True)
 
