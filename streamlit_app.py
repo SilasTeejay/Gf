@@ -329,7 +329,8 @@ RAW_KNOWLEDGE_BASE = {
     * **Bridges and Flyovers:** Construction of major bridges and flyovers in urban centers (e.g., Lagos) to ease traffic congestion and improve urban mobility.
     """
     # Add more Q&A pairs here
-    }
+    }-
+
 vectorizer = TfidfVectorizer(tokenizer=lambda x: x.split(), lowercase=True)
 
 
@@ -345,10 +346,14 @@ KB_ENTRIES_FOR_MATCHING = list(RAW_KNOWLEDGE_BASE.items())
 
 # --- 4. Function to Check for User Greetings ---
 def check_for_user_greeting(query):
-    query_lower = query.lower()
+    query_lower = query.lower().strip() # Normalize input
     for keyword in USER_GREETING_KEYWORDS:
-        if keyword in query_lower:
-            return random.choice(ASSISTANT_GREETING_RESPONSES)
+        # Check if the query starts with the greeting keyword (and optional punctuation/space)
+        if query_lower.startswith(keyword):
+            # Further check to ensure it's not part of a larger word
+            remaining_part = query_lower[len(keyword):].strip()
+            if not remaining_part or remaining_part[0] in [' ', ',', '.', '!', '?']: # If empty or followed by a separator
+                return random.choice(ASSISTANT_GREETING_RESPONSES)
     return None
 
 # --- 5. Function to Search Knowledge Base (using TF-IDF and Cosine Similarity) ---
@@ -364,7 +369,6 @@ def get_response_from_kb(query, similarity_threshold=0.3): # Adjust threshold as
         print("No meaningful words in processed user query.")
         return None
 
-    # Added robust error handling for empty user_query_vector
     try:
         user_query_vector = vectorizer.transform([processed_user_query_str])
     except ValueError as e:
@@ -378,7 +382,7 @@ def get_response_from_kb(query, similarity_threshold=0.3): # Adjust threshold as
 
     print(f"Highest Similarity Score: {highest_similarity_score:.2f}")
 
-    if highest_similarity_score > 0 and best_match_index < len(KB_ENTRIES_FOR_MATCHING): # Ensure non-zero similarity and valid index
+    if highest_similarity_score > 0 and best_match_index < len(KB_ENTRIES_FOR_MATCHING):
         matched_kb_original_key = KB_ENTRIES_FOR_MATCHING[best_match_index][0]
         print(f"Matching KB Original Key: {matched_kb_original_key}")
         print(f"Matching KB Processed Key: {processed_kb_keys_list[best_match_index]}")
@@ -413,7 +417,7 @@ if not st.session_state.first_message_displayed:
         response = st.write_stream(response_generator(initial_greeting))
     st.session_state.messages.append({"role": "assistant", "content": initial_greeting})
     st.session_state.first_message_displayed = True
-    st.balloons() # Added balloons animation on initial load
+    st.balloons()
 
 # Display chat messages from history on app rerun
 for message in st.session_state.messages:
@@ -439,7 +443,7 @@ if prompt := st.chat_input("What do you want me to talk to you about:"):
         with st.spinner("Searching knowledge base..."):
             assistant_response = get_response_from_kb(prompt)
 
-    # 3. If still no response, use fallback (now a fixed message as OpenAI removed)
+    # 3. If still no response, use fallback
     if not assistant_response:
         assistant_response = "I can not respond to this now. In future iterations, I will be able to provide an answer. I am still a work in progress."
 
