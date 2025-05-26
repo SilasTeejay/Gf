@@ -5,6 +5,7 @@ import re
 import asyncio
 import os
 import spacy
+import google.generativeai as genai
 
 # --- Streamlit App Configuration and Styling ---
 st.set_page_config(
@@ -38,66 +39,68 @@ st.markdown(
 
     /* User chat message bubble - light green background */
     /* This targets the actual content container within the user's chat message */
-    [data-testid="stChatMessage"] div.st-emotion-cache-nahz7x { /* This class is for user messages */
+    [data-testid="stChatMessage"] div.st-emotion-cache-nahz7x { /* This class is for user messages (user icon and content) */
         background-color: #E0FFE0; /* Light green for user messages */
         border-radius: 15px;
         padding: 12px;
         margin-bottom: 8px;
-        color: #1A1A1A; /* Dark text for readability */
+        color: #1A1A1A; /* Ensure user message text is dark */
     }
 
     /* Bot chat message bubble - off-white/light mint background with green border and animation */
-    /* This targets the actual content container within the assistant's chat message */
+    /* This targets the actual content container within the assistant's chat message (bot icon and content) */
     [data-testid="stChatMessage"] div.st-emotion-cache-1c7y2qn { /* This class is for assistant messages */
         background-color: #F5FFFA; /* Very light mint/off-white */
         border-left: 5px solid #2E8B57; /* Dark green accent border */
         border-radius: 15px;
         padding: 12px;
         margin-bottom: 8px;
-        color: #1A1A1A; /* Dark text for readability */
+        /* Ensure the main div text color is dark */
+        color: #1A1A1A !important;
         animation: fadeIn 1s ease-in-out; /* Apply fade-in animation */
     }
 
+    /* Ensure text inside assistant message is dark for readability, overriding any other potential styles */
+    /* This specifically targets paragraph text which st.markdown often generates */
+    [data-testid="stChatMessage"] div.st-emotion-cache-1c7y2qn p {
+        color: #1A1A1A !important; /* Force dark text color for readability */
+    }
+
     /* Input widget (text input for chat) */
-    /* This targets the overall container for the chat input */
-    .st-emotion-cache-10qj07o { /* Common class for the text input container */
-        background-color: white; /* Ensure input area is white */
-        border-top: 1px solid #2E8B57; /* Green line above input */
+    .st-emotion-cache-10qj07o {
+        background-color: white;
+        border-top: 1px solid #2E8B57;
         padding-top: 10px;
     }
-    /* This targets the actual input field */
     [data-testid="stTextInput"] input {
-        border: 2px solid #2E8B57; /* Green border for input field */
+        border: 2px solid #2E8B57;
         border-radius: 8px;
         padding: 10px;
-        color: #2E8B57; /* Green text in input */
+        color: #2E8B57;
         background-color: white;
     }
-    /* This targets the label of the input field */
     [data-testid="stTextInput"] label {
-        color: #2E8B57; /* Green label for input */
+        color: #2E8B57;
     }
 
     /* Buttons (e.g., submit button) */
-    /* This targets the "Send" button in the chat input */
-    .st-emotion-cache-r42kk1 { /* Common class for buttons */
-        background-color: #2E8B57; /* Dark green button */
-        color: white; /* White text on button */
+    .st-emotion-cache-r42kk1 {
+        background-color: #2E8B57;
+        color: white;
         border-radius: 8px;
         border: none;
         padding: 10px 20px;
         font-weight: bold;
-        transition: background-color 0.3s ease; /* Smooth hover effect */
+        transition: background-color 0.3s ease;
     }
     .st-emotion-cache-r42kk1:hover {
-        background-color: #3CB371; /* Lighter green on hover */
+        background-color: #3CB371;
         color: white;
     }
 
-    /* General Markdown text color (for responses) */
-    /* This ensures text within markdown containers (like your responses) is readable */
-    .st-emotion-cache-cnbnn3 p { /* Targets paragraphs within markdown containers */
-        color: #1A1A1A; /* Ensure response text is readable dark color */
+    /* General Markdown text color (for overall app text if not in chat bubbles) */
+    .st-emotion-cache-cnbnn3 p {
+        color: #1A1A1A !important; /* Ensure general text is readable dark color */
     }
 
     /* Animation Keyframes */
@@ -111,20 +114,24 @@ st.markdown(
 )
 
 # Load the SpaCy English model
-# This will load the model downloaded in the terminal (en_core_web_sm)
 try:
     nlp = spacy.load("en_core_web_sm")
 except OSError:
     st.error("SpaCy model 'en_core_web_sm' not found. Please run 'python -m spacy download en_core_web_sm' in your terminal.")
-    st.stop() # Stop the app if model is not found
+    st.stop()
+
+
+# --- Configure Gemini API ---
+try:
+    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+    gemini_model = genai.GenerativeModel('gemini-pro')
+except Exception as e:
+    st.error(f"Failed to configure Gemini API. Please check your GEMINI_API_KEY in .streamlit/secrets.toml or Streamlit Cloud secrets. Error: {e}")
+    st.stop()
 
 
 # --- Helper functions for NLP processing ---
 def preprocess_text_for_matching(text):
-    """
-    Tokenizes, converts to lowercase, removes stopwords, and lemmatizes the text using SpaCy.
-    Returns a space-separated string of processed words.
-    """
     doc = nlp(text.lower())
     processed_tokens = []
     for token in doc:
@@ -132,19 +139,14 @@ def preprocess_text_for_matching(text):
             processed_tokens.append(token.lemma_)
     return " ".join(processed_tokens)
 
-# --- NEW FUNCTION FOR FORMATTING RESPONSES ---
+# --- Function for formatting responses with newlines ---
 def format_response_text(text):
-    """
-    Formats the given text by splitting it into sentences and joining them with newlines.
-    Uses SpaCy for robust sentence tokenization.
-    """
     doc = nlp(text)
     sentences = [sent.text.strip() for sent in doc.sents]
-    # Join sentences with two newlines for better visual separation
     return "\n\n".join(sentences)
 
 
-# 1. Define Initial Greetings ---
+# 1. Define Initial Greetings
 INITIAL_GREETINGS = [
     "Hello there! How can I assist you today regarding the Nigerian Government?",
     "Hi, human! I'm GovFocus AI, ready to help you with information about the Nigerian Government. What's on your mind?",
@@ -344,6 +346,7 @@ RAW_KNOWLEDGE_BASE = {
     }
 
 
+
 vectorizer = TfidfVectorizer(tokenizer=lambda x: x.split(), lowercase=True)
 
 
@@ -359,21 +362,18 @@ KB_ENTRIES_FOR_MATCHING = list(RAW_KNOWLEDGE_BASE.items())
 
 # --- 4. Function to Check for User Greetings ---
 def check_for_user_greeting(query):
-    query_lower = query.lower().strip() # Normalize input
+    query_lower = query.lower().strip()
     for keyword in USER_GREETING_KEYWORDS:
-        # Check if the query starts with the greeting keyword (and optional punctuation/space)
         if query_lower.startswith(keyword):
-            # Further check to ensure it's not part of a larger word
             remaining_part = query_lower[len(keyword):].strip()
-            if not remaining_part or remaining_part[0] in [' ', ',', '.', '!', '?']: # If empty or followed by a separator
+            if not remaining_part or remaining_part[0] in [' ', ',', '.', '!', '?']:
                 return random.choice(ASSISTANT_GREETING_RESPONSES)
     return None
 
 # --- 5. Function to Search Knowledge Base (using TF-IDF and Cosine Similarity) ---
-def get_response_from_kb(query, similarity_threshold=0.3): # Adjust threshold as needed
+def get_response_from_kb(query, similarity_threshold=0.3):
     processed_user_query_str = preprocess_text_for_matching(query)
 
-    # TEMPORARY DEBUGGING PRINTS (will appear in Codespaces terminal/logs)
     print(f"\n--- KB Matching Debug ---")
     print(f"User Query (Raw): {query}")
     print(f"User Query (Processed): '{processed_user_query_str}'")
@@ -408,6 +408,43 @@ def get_response_from_kb(query, similarity_threshold=0.3): # Adjust threshold as
 
     print(f"No significant KB match found above threshold ({similarity_threshold:.2f}).")
     return None
+
+# --- Function to get response from Gemini ---
+def get_gemini_response(user_query, kb_context=None):
+    prompt_parts = []
+
+    # System instruction for Gemini
+    system_instruction = (
+        "You are GovFocus AI, a helpful and knowledgeable assistant specializing in the Nigerian Government. "
+        "Your goal is to provide concise, accurate, and intelligent answers. "
+        "Do not generate information that is not directly related to the Nigerian Government."
+    )
+
+    if kb_context:
+        # If KB context is available, instruct Gemini to rephrase/summarize it.
+        prompt_parts.append(system_instruction)
+        prompt_parts.append(
+            f"Based on the following factual information about the Nigerian government: '{kb_context}', "
+            f"please provide a concise and intelligent answer to the user's question: '{user_query}'. "
+            "Rephrase the information naturally and conversationally, extracting key points relevant to the question. "
+            "If the provided information does not directly answer the user's question, state that you can only provide information based on the given context."
+        )
+    else:
+        # If no KB context, instruct Gemini to answer based on its general knowledge.
+        prompt_parts.append(system_instruction)
+        prompt_parts.append(
+            f"The user is asking a question about the Nigerian government: '{user_query}'. "
+            f"Please provide a concise and intelligent answer based on your general knowledge about the Nigerian government. "
+            f"Focus on understanding the intent and providing a helpful summary."
+        )
+
+    try:
+        # Use generative model to get response
+        response = gemini_model.generate_content(prompt_parts)
+        return response.text
+    except Exception as e:
+        print(f"Error calling Gemini API: {e}")
+        return None
 
 # --- Streamed response emulator (ASYNCHRONOUS) ---
 async def response_generator(response_text):
@@ -444,7 +481,7 @@ if prompt := st.chat_input("What do you want me to talk to you about:"):
     with st.chat_message("user"):
         st.markdown(prompt, unsafe_allow_html=True)
 
-    # --- Determine assistant response based on hierarchy: Greeting -> KB -> Fallback ---
+    # --- Determine assistant response based on hierarchy: Greeting -> KB -> Gemini -> Fallback ---
     assistant_response = None
 
     # 1. Check for user greetings first
@@ -452,18 +489,30 @@ if prompt := st.chat_input("What do you want me to talk to you about:"):
     if greeting_response:
         assistant_response = greeting_response
     else:
-        # 2. If no greeting, check knowledge base using processed query
+        # 2. Attempt to get response from Knowledge Base
         with st.spinner("Searching knowledge base..."):
             kb_raw_response = get_response_from_kb(prompt)
-            if kb_raw_response:
-                # Apply the new formatting function here
-                assistant_response = format_response_text(kb_raw_response)
-            else:
-                assistant_response = None # No KB response found
 
-    # 3. If still no response, use fallback
+        # 3. If KB response, send to Gemini for refinement; else send query to Gemini directly
+        if kb_raw_response:
+            with st.spinner("Generating intelligent response..."):
+                gemini_refined_response = get_gemini_response(prompt, kb_context=kb_raw_response)
+                if gemini_refined_response:
+                    assistant_response = format_response_text(gemini_refined_response)
+                else:
+                    print("Gemini failed to refine KB response, falling back to raw KB.")
+                    assistant_response = format_response_text(kb_raw_response)
+        else:
+            with st.spinner("Understanding your query with AI..."):
+                gemini_general_response = get_gemini_response(prompt)
+                if gemini_general_response:
+                    assistant_response = format_response_text(gemini_general_response)
+                else:
+                    assistant_response = None
+
+    # 4. Final Fallback if no response generated so far
     if not assistant_response:
-        assistant_response = "I can not respond to this now. In future iterations, I will be able to provide an answer. I am still a work in progress."
+        assistant_response = "I apologize, but I currently cannot provide an answer to that specific question. I am still learning and improving my ability to understand and respond to complex queries about the Nigerian government."
 
     # Display the chosen assistant response
     with st.chat_message("assistant"):
