@@ -28,6 +28,7 @@ def preprocess_text_for_matching(text): # Removed use_stemming parameter
         if token.is_alpha and not token.is_stop:
             # Use token.lemma_ for lemmatization
             processed_tokens.append(token.lemma_)
+        st.sidebar.write(f"Processed Text: '{text}' -> '{' '.join(processed_tokens)}'")
     return " ".join(processed_tokens) # Return as a single string for TfidfVectorizer
 # --- 
 # 1. Define Initial Greetings ---
@@ -98,6 +99,10 @@ def get_response_from_kb(query, similarity_threshold=0.3): # Adjust threshold as
 
     best_match_index = similarity.argmax()
     highest_similarity_score = similarity[0, best_match_index]
+
+    st.sidebar.write(f"Highest Similarity Score: {highest_similarity_score:.2f}") # ADD THIS LINE
+    st.sidebar.write(f"Matching KB Original Key: {KB_ENTRIES_FOR_MATCHING[best_match_index][0]}") # ADD THIS LINE
+    st.sidebar.write(f"Matching KB Processed Key: {processed_kb_keys_list[best_match_index]}") # ADD THIS LINE
 
     # Debugging: Show similarity scores (uncomment if needed)
     # st.sidebar.text(f"All Similarities: {similarity[0]}")
