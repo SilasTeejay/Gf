@@ -7,8 +7,8 @@ RAW_KNOWLEDGE_BASE = {
     "functions of government": "The functions of government include maintaining law and order, providing public services, regulating the economy, and defending the nation.",
     "local government": "Local governments in Nigeria are the third tier of government, responsible for grassroots development and service delivery in specific areas.",
     "federal government": "The Federal Government of Nigeria is the central governing body, with responsibilities for national defense, foreign policy, monetary policy, and major infrastructure projects.",
-    "state government": "State governments in Nigeria are responsible for governance within their respective states, including education, healthcare, and state-level infrastructure."
-     "Nigeria History Overview": """
+    "state government": "State governments in Nigeria are responsible for governance within their respective states, including education, healthcare, and state-level infrastructure.",
+    "Nigeria History Overview": """
     Nigeria's history is rich and diverse, spanning millennia from ancient civilizations to its modern nation-state.
     Pre-colonial era: Various sophisticated empires and kingdoms flourished, such as the Nok civilization (5th century BC to 2nd century AD) known for its terracotta sculptures, the Kanem-Bornu Empire (9th-19th century AD) in the North-East, the Hausa city-states (from 11th century AD) in the North, and the Yoruba kingdoms of Ife (11th-15th century) and Oyo (16th-18th century) in the Southwest. The Benin Empire (15th-19th century) in the South-South was renowned for its bronze artistry and extensive trade networks, particularly with the Portuguese who arrived in the late 15th century.
     Colonial Era (19th Century - 1960):
@@ -174,4 +174,4 @@ RAW_KNOWLEDGE_BASE = {
     * **Bridges and Flyovers:** Construction of major bridges and flyovers in urban centers (e.g., Lagos) to ease traffic congestion and improve urban mobility.
     """
     # Add more Q&A pairs here
-}
+    }
