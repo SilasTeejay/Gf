@@ -5,8 +5,6 @@ import re
 import asyncio
 import os
 import spacy
-# Removed: import openai # No longer needed if not using OpenAI
-
 
 # --- Streamlit App Configuration and Styling ---
 st.set_page_config(
@@ -134,9 +132,8 @@ def preprocess_text_for_matching(text): # Removed use_stemming parameter
         if token.is_alpha and not token.is_stop:
             # Use token.lemma_ for lemmatization
             processed_tokens.append(token.lemma_)
-    # Removed debug message from sidebar: st.sidebar.write(f"Processed Text: '{text}' -> '{' '.join(processed_tokens)}'")
     return " ".join(processed_tokens) # Return as a single string for TfidfVectorizer
-# ---
+
 # 1. Define Initial Greetings ---
 INITIAL_GREETINGS = [
     "Hello there! How can I assist you today regarding the Nigerian Government?",
@@ -159,11 +156,12 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from knowledge_base import RAW_KNOWLEDGE_BASE
 
-vectorizer = TfidfVectorizer(tokenizer=lambda x: x.split(), lowercase=False)
+# FIX: Set lowercase=True to ensure consistency with preprocess_text_for_matching
+vectorizer = TfidfVectorizer(tokenizer=lambda x: x.split(), lowercase=True)
 
 
 processed_kb_keys_list = [
-    preprocess_text_for_matching(key) # Removed use_stemming=False
+    preprocess_text_for_matching(key)
     for key in RAW_KNOWLEDGE_BASE.keys()
 ]
 
@@ -171,13 +169,6 @@ processed_kb_keys_list = [
 kb_vectors = vectorizer.fit_transform(processed_kb_keys_list)
 
 KB_ENTRIES_FOR_MATCHING = list(RAW_KNOWLEDGE_BASE.items())
-
-# Debugging: Show processed KB keys and vocabulary (uncomment if needed)
-# st.sidebar.header("Debugging: Processed KB Keys (for TF-IDF)")
-# for pk_str in processed_kb_keys_list:
-#       st.sidebar.write(f"Processed KB Key: '{pk_str}'")
-# st.sidebar.write(f"TF-IDF Vocabulary: {vectorizer.get_feature_names_out()}")
-
 
 # --- 4. Function to Check for User Greetings ---
 def check_for_user_greeting(query):
@@ -191,12 +182,13 @@ def check_for_user_greeting(query):
 def get_response_from_kb(query, similarity_threshold=0.3): # Adjust threshold as needed
     processed_user_query_str = preprocess_text_for_matching(query)
 
-    # Debugging: Show raw and processed user query (uncomment if needed)
-    # st.sidebar.text(f"User Query (Raw): {query}")
-    # st.sidebar.text(f"User Query (Processed Str): '{processed_user_query_str}'")
+    # TEMPORARY DEBUGGING PRINTS (will appear in Codespaces terminal/logs)
+    print(f"\n--- KB Matching Debug ---")
+    print(f"User Query (Raw): {query}")
+    print(f"User Query (Processed): '{processed_user_query_str}'")
 
     if not processed_user_query_str.strip():
-        # st.sidebar.text("No meaningful words in processed user query.")
+        print("No meaningful words in processed user query.")
         return None
 
     user_query_vector = vectorizer.transform([processed_user_query_str])
@@ -206,20 +198,19 @@ def get_response_from_kb(query, similarity_threshold=0.3): # Adjust threshold as
     best_match_index = similarity.argmax()
     highest_similarity_score = similarity[0, best_match_index]
 
-    # Removed debug messages from sidebar:
-    # st.sidebar.write(f"Highest Similarity Score: {highest_similarity_score:.2f}")
-    # st.sidebar.write(f"Matching KB Original Key: {KB_ENTRIES_FOR_MATCHING[best_match_index][0]}")
-    # st.sidebar.write(f"Matching KB Processed Key: {processed_kb_keys_list[best_match_index]}")
+    print(f"Highest Similarity Score: {highest_similarity_score:.2f}")
+    if best_match_index < len(KB_ENTRIES_FOR_MATCHING): # Safety check
+        matched_kb_original_key = KB_ENTRIES_FOR_MATCHING[best_match_index][0]
+        print(f"Matching KB Original Key: {matched_kb_original_key}")
+        print(f"Matching KB Processed Key: {processed_kb_keys_list[best_match_index]}")
+    else:
+        print(f"ERROR: best_match_index ({best_match_index}) out of bounds for KB_ENTRIES_FOR_MATCHING (size {len(KB_ENTRIES_FOR_MATCHING)})")
 
-    # Debugging: Show similarity scores (uncomment if needed)
-    # st.sidebar.text(f"All Similarities: {similarity[0]}")
-    # st.sidebar.text(f"Highest Similarity Score: {highest_similarity_score} at index {best_match_index}")
-    # st.sidebar.text(f"Matching KB Original Key: {KB_ENTRIES_FOR_MATCHING[best_match_index][0]}")
 
     if highest_similarity_score >= similarity_threshold:
         return KB_ENTRIES_FOR_MATCHING[best_match_index][1]
 
-    # st.sidebar.text("No significant KB match found above threshold.")
+    print(f"No significant KB match found above threshold ({similarity_threshold:.2f}).")
     return None
 
 # --- Streamed response emulator (ASYNCHRONOUS) ---
@@ -228,7 +219,7 @@ async def response_generator(response_text):
         yield word + " "
         await asyncio.sleep(0.05)
 
-st.title("🇳🇬 GovFocus AI: Your Guide to the Nigerian Government") # Added emoji to title
+st.title("🇳🇬 GovFocus AI: Your Guide to the Nigerian Government")
 st.markdown("Ask me anything about the Nigerian Government.")
 
 # --- Initialize ALL session state variables here ---
@@ -248,14 +239,14 @@ if not st.session_state.first_message_displayed:
 # Display chat messages from history on app rerun
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
-        st.markdown(message["content"], unsafe_allow_html=True) # Added unsafe_allow_html for styling
+        st.markdown(message["content"], unsafe_allow_html=True)
 
 
 # Accept user input
 if prompt := st.chat_input("What do you want me to talk to you about:"):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
-        st.markdown(prompt, unsafe_allow_html=True) # Added unsafe_allow_html for styling
+        st.markdown(prompt, unsafe_allow_html=True)
 
     # --- Determine assistant response based on hierarchy: Greeting -> KB -> Fallback ---
     assistant_response = None
@@ -266,7 +257,7 @@ if prompt := st.chat_input("What do you want me to talk to you about:"):
         assistant_response = greeting_response
     else:
         # 2. If no greeting, check knowledge base using processed query
-        with st.spinner("Searching knowledge base..."): # Added spinner
+        with st.spinner("Searching knowledge base..."):
             assistant_response = get_response_from_kb(prompt)
 
     # 3. If still no response, use fallback (now a fixed message as OpenAI removed)
