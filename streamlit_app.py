@@ -56,21 +56,23 @@ st.markdown(
     }}
 
     /* Bot (Assistant) chat message bubble */
-    [data-testid="stChatMessage"] div.st-emotion-cache-1c7y2qn {{ /* This class is for assistant messages */
-        background-color: {PRIMARY_DEEP_GREEN}; /* Set background to deep green */
+    /* Increased specificity and !important for background and text color */
+    [data-testid="stChatMessage"] div.st-emotion-cache-1c7y2qn,
+    [data-testid="stChatMessage"] div.st-emotion-cache-1c7y2qn p,
+    [data-testid="stChatMessage"] div.st-emotion-cache-1c7y2qn ol,
+    [data-testid="stChatMessage"] div.st-emotion-cache-1c7y2qn ul,
+    [data-testid="stChatMessage"] div.st-emotion-cache-1c7y2qn li {{
+        background-color: {PRIMARY_DEEP_GREEN} !important; /* Set background to deep green and force it */
+        color: {TEXT_ON_DEEP_GREEN} !important; /* Force white text color for readability */
+    }}
+
+    [data-testid="stChatMessage"] div.st-emotion-cache-1c7y2qn {{ /* Targeting the main container again for other properties */
         border-left: 5px solid {ACCENT_GREEN}; /* Accent green border */
         border-radius: 15px;
         padding: 12px;
         margin-bottom: 8px;
-        /* Crucial: Ensure the main div text color is white for readability on deep green */
-        color: {TEXT_ON_DEEP_GREEN} !important;
         animation: fadeIn 1s ease-in-out;
         word-wrap: break-word; /* Crucial for mobile: breaks long words */
-    }}
-
-    /* Crucial: Ensure text inside assistant message paragraphs is white for readability */
-    [data-testid="stChatMessage"] div.st-emotion-cache-1c7y2qn p {{
-        color: {TEXT_ON_DEEP_GREEN} !important; /* Force white text color for readability */
     }}
 
     /* Input widget (text input for chat) */
@@ -144,7 +146,7 @@ def preprocess_text_for_matching(text):
 # --- Function for formatting responses with newlines ---
 def format_response_text(text):
     """
-    Formats the given text by splitting it into sentences and joining them with newlines.
+    Forma`ts the given text by splitting it into sentences and joining them with newlines.
     Uses SpaCy for robust sentence tokenization.
     """
     doc = nlp(text)
@@ -353,7 +355,6 @@ RAW_KNOWLEDGE_BASE = {
     """
     # Add more Q&A pairs here
     }
-
 processed_kb_keys_list = [
     preprocess_text_for_matching(key)
     for key in RAW_KNOWLEDGE_BASE.keys()
