@@ -132,6 +132,18 @@ def preprocess_text_for_matching(text):
             processed_tokens.append(token.lemma_)
     return " ".join(processed_tokens)
 
+# --- NEW FUNCTION FOR FORMATTING RESPONSES ---
+def format_response_text(text):
+    """
+    Formats the given text by splitting it into sentences and joining them with newlines.
+    Uses SpaCy for robust sentence tokenization.
+    """
+    doc = nlp(text)
+    sentences = [sent.text.strip() for sent in doc.sents]
+    # Join sentences with two newlines for better visual separation
+    return "\n\n".join(sentences)
+
+
 # 1. Define Initial Greetings ---
 INITIAL_GREETINGS = [
     "Hello there! How can I assist you today regarding the Nigerian Government?",
@@ -331,6 +343,7 @@ RAW_KNOWLEDGE_BASE = {
     # Add more Q&A pairs here
     }
 
+
 vectorizer = TfidfVectorizer(tokenizer=lambda x: x.split(), lowercase=True)
 
 
@@ -441,7 +454,12 @@ if prompt := st.chat_input("What do you want me to talk to you about:"):
     else:
         # 2. If no greeting, check knowledge base using processed query
         with st.spinner("Searching knowledge base..."):
-            assistant_response = get_response_from_kb(prompt)
+            kb_raw_response = get_response_from_kb(prompt)
+            if kb_raw_response:
+                # Apply the new formatting function here
+                assistant_response = format_response_text(kb_raw_response)
+            else:
+                assistant_response = None # No KB response found
 
     # 3. If still no response, use fallback
     if not assistant_response:
