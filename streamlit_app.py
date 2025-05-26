@@ -9,114 +9,122 @@ import spacy
 # --- Streamlit App Configuration and Styling ---
 st.set_page_config(
     page_title="Nigeria Info Chatbot",
-    layout="wide",
+    layout="wide", # This is fine for desktop, Streamlit handles responsiveness for columns etc. on mobile
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for white and green theme, and basic animation
+# Define a color palette for easier management
+# Using a deeper green palette now
+PRIMARY_DEEP_GREEN = "#006400"  # A rich, deep forest green
+LIGHT_USER_GREEN = "#E0FFE0"   # Very light green for user bubbles
+ACCENT_GREEN = "#3CB371"       # Medium sea green for hover states/secondary elements
+BACKGROUND_OFF_WHITE = "#F5FFFA" # Very light mint/off-white for bot background
+TEXT_DARK = "#1A1A1A"          # Very dark grey for main text (almost black)
+
+# Custom CSS for theme and animation
 st.markdown(
-    """
+    f"""
     <style>
     /* Dominant white background for the entire app */
-    .stApp {
+    .stApp {{
         background-color: white;
-        color: #2E8B57; /* Darker green for general text */
-    }
+        color: {PRIMARY_DEEP_GREEN}; /* Deep green for general text */
+    }}
 
-    /* Sidebar background and text (Still kept for general Streamlit styling) */
-    [data-testid="stSidebar"] {
-        background-color: #F0FFF0; /* Very light green/mint */
-        color: #2E8B57; /* Dark green for sidebar text */
-    }
+    /* Sidebar background and text */
+    [data-testid="stSidebar"] {{
+        background-color: {BACKGROUND_OFF_WHITE}; /* Light mint */
+        color: {PRIMARY_DEEP_GREEN}; /* Deep green for sidebar text */
+    }}
 
     /* Header/Title */
-    h1 { /* Targeting H1 tag for the main title */
-        color: #2E8B57; /* Dark green title */
+    h1 {{
+        color: {PRIMARY_DEEP_GREEN}; /* Deep green title */
         text-align: center;
         margin-bottom: 20px;
-    }
+    }}
 
-    /* User chat message bubble - light green background */
-    /* This targets the actual content container within the user's chat message */
-    [data-testid="stChatMessage"] div.st-emotion-cache-nahz7x { /* This class is for user messages */
-        background-color: #E0FFE0; /* Light green for user messages */
+    /* User chat message bubble */
+    [data-testid="stChatMessage"] div.st-emotion-cache-nahz7x {{ /* This class is for user messages */
+        background-color: {LIGHT_USER_GREEN}; /* Light green for user messages */
         border-radius: 15px;
         padding: 12px;
         margin-bottom: 8px;
-        color: #1A1A1A; /* Dark text for readability */
-    }
+        color: {TEXT_DARK}; /* Ensure user message text is dark for readability */
+        word-wrap: break-word; /* Crucial for mobile: breaks long words */
+    }}
 
-    /* Bot chat message bubble - off-white/light mint background with green border and animation */
-    /* This targets the actual content container within the assistant's chat message */
-    [data-testid="stChatMessage"] div.st-emotion-cache-1c7y2qn { /* This class is for assistant messages */
-        background-color: #F5FFFA; /* Very light mint/off-white */
-        border-left: 5px solid #2E8B57; /* Dark green accent border */
+    /* Bot (Assistant) chat message bubble */
+    [data-testid="stChatMessage"] div.st-emotion-cache-1c7y2qn {{ /* This class is for assistant messages */
+        background-color: {BACKGROUND_OFF_WHITE}; /* Very light mint/off-white */
+        border-left: 5px solid {PRIMARY_DEEP_GREEN}; /* Deep green accent border */
         border-radius: 15px;
         padding: 12px;
         margin-bottom: 8px;
-        color: #1A1A1A; /* Dark text for readability */
-        animation: fadeIn 1s ease-in-out; /* Apply fade-in animation */
-    }
+        /* Crucial: Ensure the main div text color is dark for readability */
+        color: {TEXT_DARK} !important;
+        animation: fadeIn 1s ease-in-out;
+        word-wrap: break-word; /* Crucial for mobile: breaks long words */
+    }}
+
+    /* Crucial: Ensure text inside assistant message paragraphs is dark for readability, overriding any other potential styles */
+    [data-testid="stChatMessage"] div.st-emotion-cache-1c7y2qn p {{
+        color: {TEXT_DARK} !important; /* Force dark text color for readability */
+    }}
 
     /* Input widget (text input for chat) */
-    /* This targets the overall container for the chat input */
-    .st-emotion-cache-10qj07o { /* Common class for the text input container */
-        background-color: white; /* Ensure input area is white */
-        border-top: 1px solid #2E8B57; /* Green line above input */
+    .st-emotion-cache-10qj07o {{ /* Common class for the text input container */
+        background-color: white;
+        border-top: 1px solid {PRIMARY_DEEP_GREEN}; /* Deep green line above input */
         padding-top: 10px;
-    }
-    /* This targets the actual input field */
-    [data-testid="stTextInput"] input {
-        border: 2px solid #2E8B57; /* Green border for input field */
+    }}
+    [data-testid="stTextInput"] input {{
+        border: 2px solid {PRIMARY_DEEP_GREEN}; /* Deep green border for input field */
         border-radius: 8px;
         padding: 10px;
-        color: #2E8B57; /* Green text in input */
+        color: {PRIMARY_DEEP_GREEN}; /* Deep green text in input */
         background-color: white;
-    }
-    /* This targets the label of the input field */
-    [data-testid="stTextInput"] label {
-        color: #2E8B57; /* Green label for input */
-    }
+    }}
+    [data-testid="stTextInput"] label {{
+        color: {PRIMARY_DEEP_GREEN}; /* Deep green label for input */
+    }}
 
     /* Buttons (e.g., submit button) */
-    /* This targets the "Send" button in the chat input */
-    .st-emotion-cache-r42kk1 { /* Common class for buttons */
-        background-color: #2E8B57; /* Dark green button */
+    .st-emotion-cache-r42kk1 {{ /* Common class for buttons */
+        background-color: {PRIMARY_DEEP_GREEN}; /* Deep green button */
         color: white; /* White text on button */
         border-radius: 8px;
         border: none;
         padding: 10px 20px;
         font-weight: bold;
-        transition: background-color 0.3s ease; /* Smooth hover effect */
-    }
-    .st-emotion-cache-r42kk1:hover {
-        background-color: #3CB371; /* Lighter green on hover */
+        transition: background-color 0.3s ease;
+    }}
+    .st-emotion-cache-r42kk1:hover {{
+        background-color: {ACCENT_GREEN}; /* Lighter green on hover */
         color: white;
-    }
+    }}
 
-    /* General Markdown text color (for responses) */
-    /* This ensures text within markdown containers (like your responses) is readable */
-    .st-emotion-cache-cnbnn3 p { /* Targets paragraphs within markdown containers */
-        color: #1A1A1A; /* Ensure response text is readable dark color */
-    }
+    /* General Markdown text color (for overall app text if not in chat bubbles) */
+    .st-emotion-cache-cnbnn3 p {{
+        color: {TEXT_DARK} !important; /* Ensure general text is readable dark color */
+    }}
 
     /* Animation Keyframes */
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
+    @keyframes fadeIn {{
+        from {{ opacity: 0; transform: translateY(10px); }}
+        to {{ opacity: 1; transform: translateY(0); }}
+    }}
     </style>
     """,
     unsafe_allow_html=True
 )
 
 # Load the SpaCy English model
-# This will load the model downloaded in the terminal (en_core_web_sm)
 try:
     nlp = spacy.load("en_core_web_sm")
 except OSError:
     st.error("SpaCy model 'en_core_web_sm' not found. Please run 'python -m spacy download en_core_web_sm' in your terminal.")
-    st.stop() # Stop the app if model is not found
+    st.stop()
 
 
 # --- Helper functions for NLP processing ---
@@ -132,7 +140,7 @@ def preprocess_text_for_matching(text):
             processed_tokens.append(token.lemma_)
     return " ".join(processed_tokens)
 
-# --- NEW FUNCTION FOR FORMATTING RESPONSES ---
+# --- Function for formatting responses with newlines ---
 def format_response_text(text):
     """
     Formats the given text by splitting it into sentences and joining them with newlines.
@@ -164,6 +172,8 @@ ASSISTANT_GREETING_RESPONSES = [
 # --- Initialize TF-IDF Vectorizer and Process KB ---
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+
+vectorizer = TfidfVectorizer(tokenizer=lambda x: x.split(), lowercase=True)
 
 RAW_KNOWLEDGE_BASE = {
     "nigerian president": "The current President of Nigeria is Bola Ahmed Tinubu.",
@@ -342,16 +352,10 @@ RAW_KNOWLEDGE_BASE = {
     """
     # Add more Q&A pairs here
     }
-
-
-vectorizer = TfidfVectorizer(tokenizer=lambda x: x.split(), lowercase=True)
-
-
 processed_kb_keys_list = [
     preprocess_text_for_matching(key)
     for key in RAW_KNOWLEDGE_BASE.keys()
 ]
-
 
 kb_vectors = vectorizer.fit_transform(processed_kb_keys_list)
 
@@ -454,7 +458,6 @@ if prompt := st.chat_input("What do you want me to talk to you about:"):
     else:
         # 2. If no greeting, check knowledge base using processed query
         with st.spinner("Searching knowledge base..."):
-            assistant_response = get_response_from_kb(prompt)
             kb_raw_response = get_response_from_kb(prompt)
             if kb_raw_response:
                 # Apply the new formatting function here
