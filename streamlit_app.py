@@ -18,7 +18,8 @@ st.set_page_config(
 PRIMARY_DEEP_GREEN = "#006400"  # A rich, deep forest green
 LIGHT_USER_GREEN = "#E0FFE0"   # Very light green for user bubbles
 ACCENT_GREEN = "#3CB371"       # Medium sea green for hover states/secondary elements
-BACKGROUND_OFF_WHITE = "#F5FFFA" # Very light mint/off-white for bot background
+# Changed this to a lighter color for text on deep green background
+TEXT_ON_DEEP_GREEN = "#FFFFFF" # White text for deep green background
 TEXT_DARK = "#1A1A1A"          # Very dark grey for main text (almost black)
 
 # Custom CSS for theme and animation
@@ -33,7 +34,7 @@ st.markdown(
 
     /* Sidebar background and text */
     [data-testid="stSidebar"] {{
-        background-color: {BACKGROUND_OFF_WHITE}; /* Light mint */
+        background-color: {TEXT_ON_DEEP_GREEN}; /* Use white for sidebar background */
         color: {PRIMARY_DEEP_GREEN}; /* Deep green for sidebar text */
     }}
 
@@ -56,20 +57,20 @@ st.markdown(
 
     /* Bot (Assistant) chat message bubble */
     [data-testid="stChatMessage"] div.st-emotion-cache-1c7y2qn {{ /* This class is for assistant messages */
-        background-color: {BACKGROUND_OFF_WHITE}; /* Very light mint/off-white */
-        border-left: 5px solid {PRIMARY_DEEP_GREEN}; /* Deep green accent border */
+        background-color: {PRIMARY_DEEP_GREEN}; /* Set background to deep green */
+        border-left: 5px solid {ACCENT_GREEN}; /* Accent green border */
         border-radius: 15px;
         padding: 12px;
         margin-bottom: 8px;
-        /* Crucial: Ensure the main div text color is dark for readability */
-        color: {TEXT_DARK} !important;
+        /* Crucial: Ensure the main div text color is white for readability on deep green */
+        color: {TEXT_ON_DEEP_GREEN} !important;
         animation: fadeIn 1s ease-in-out;
         word-wrap: break-word; /* Crucial for mobile: breaks long words */
     }}
 
-    /* Crucial: Ensure text inside assistant message paragraphs is dark for readability, overriding any other potential styles */
+    /* Crucial: Ensure text inside assistant message paragraphs is white for readability */
     [data-testid="stChatMessage"] div.st-emotion-cache-1c7y2qn p {{
-        color: {TEXT_DARK} !important; /* Force dark text color for readability */
+        color: {TEXT_ON_DEEP_GREEN} !important; /* Force white text color for readability */
     }}
 
     /* Input widget (text input for chat) */
@@ -352,6 +353,7 @@ RAW_KNOWLEDGE_BASE = {
     """
     # Add more Q&A pairs here
     }
+
 processed_kb_keys_list = [
     preprocess_text_for_matching(key)
     for key in RAW_KNOWLEDGE_BASE.keys()
